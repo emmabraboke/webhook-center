@@ -1,73 +1,83 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# WebhookCenter API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+WebhookCenter API is a robust Webhook management system. It allows you to manage and process incoming webhooks in a structured and efficient manner.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 1. Getting Started
 
-## Description
+### 1.1 Application and Documentation
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+You can access the application and its documentation at the following URLs after setup:
 
-## Installation
+- Application: http://localhost:3000/api/v1
+- Documentation: http://localhost:3000/documentation
 
-```bash
-$ npm install
+### 1.2 Prerequisites
+
+Before you begin, ensure you have the following software installed on your workstation:
+
+- [Node.js](https://nodejs.org/en/download/package-manager)
+- [PostgreSQL](https://www.postgresql.org/download/)
+- [Docker](https://www.docker.com/products/docker-desktop) (Optional)
+
+### 1.3 Project Setup
+
+To set up the project on your local machine, follow these steps:
+
+Clone the repository to your local machine:
+
+```sh
+git clone https://github.com/emmabraboke/webhook-center
 ```
 
-## Running the app
+Navigate into the project directory:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```sh
+cd webhook-center
 ```
 
-## Test
+Install the project dependencies:
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```sh
+npm install
 ```
 
-## Support
+Create a `.env` file in the root directory of the project. This file should mirror the `.env.sample` file provided in the repository. Fill in the necessary environment variables.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```sh
+cp .env.sample .env
+vi .env
+```
 
-## Stay in touch
+### 1.4 Running the Application
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+After setting up the project, you can run the application using Node.js or Docker.
 
-## License
+To run the application using Node.js:
 
-Nest is [MIT licensed](LICENSE).
+```sh
+npm run start:prod
+```
+
+To run the application using Docker:
+
+First, build the Docker image:
+
+```sh
+docker build -t webhook-center .
+```
+
+Then, run the Docker container:
+
+```sh
+docker run --env-file .env -p 3000:3000 -d webhook-center
+```
+
+The application will be accessible at `http://localhost:3000/api/v1` and the documentation at `http://localhost:3000/documentation`.
+
+## 2. Technologies Used
+
+The WebhookCenter API is built with the following technologies:
+
+- Node.js
+- NestJS
+- PostgreSQL
