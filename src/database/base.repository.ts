@@ -1,9 +1,8 @@
 import { ModelClass } from 'objection';
 import { BaseModel } from './models/base.model';
 
-
 export class BaseRepository<T extends BaseModel> {
-  constructor(private model: ModelClass<T>) {}
+  constructor(protected model: ModelClass<T>) {}
 
   create(data: Partial<T>) {
     return this.model.query().insert(data);
@@ -21,8 +20,17 @@ export class BaseRepository<T extends BaseModel> {
     return this.model.query().orderBy('createdAt', 'DESC');
   }
 
-  findPaginated(page: number, pageSize: number) {
-    return this.model.query().page(page - 1, pageSize);
+  findPaginated(
+    page: number,
+    pageSize: number,
+    filter: Partial<T> = {},
+    relations = '',
+  ) {
+    return this.model
+      .query()
+      .where(filter)
+      .withGraphFetched(relations)
+      .page(page - 1, pageSize);
   }
 
   findOne(data: Partial<T>, relations = '') {

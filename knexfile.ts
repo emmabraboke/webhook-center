@@ -8,10 +8,7 @@ const KnexConfig = {
     host: process.env.DATABASE_HOST,
     database: process.env.DATABASE_NAME,
     user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    password: process.env.DATABASE_PASSWORD
   },
   pool: {
     min: 0,
@@ -29,4 +26,4 @@ const KnexConfig = {
   ...knexSnakeCaseMappers(),
 };
 
-module.exports = KnexConfig
+module.exports = KnexConfig;

@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Config } from './config/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filter/exception.filter';
 
 async function bootstrap() {
@@ -11,6 +11,13 @@ async function bootstrap() {
   const httpRef = app.getHttpAdapter().getHttpServer();
 
   app.useGlobalFilters(new AllExceptionsFilter(httpRef, new Logger()));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
 
   app.setGlobalPrefix('api/v1');
 
