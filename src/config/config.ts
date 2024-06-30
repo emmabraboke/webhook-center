@@ -21,6 +21,9 @@ class ConfigService {
   @IsString()
   readonly databasePassword = process.env.DATABASE_PASSWORD;
 
+  @IsString()
+  readonly jwtSecret = process.env.JWT_SECRET;
+
   constructor() {
     this.validateConfigs();
   }
