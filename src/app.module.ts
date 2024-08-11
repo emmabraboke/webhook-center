@@ -10,10 +10,16 @@ import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from './database/database.module';
 import { BusinessModule } from './business/business.module';
 import { JwtStrategy } from './common/strategy/jwt.strategy';
+import { CacheModule } from '@nestjs/cache-manager';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    CacheModule.register({
+      //switch to redis later
+      isGlobal: true,
+    }),
     AuthModule,
     UserModule,
     JwtModule.register({
@@ -22,6 +28,7 @@ import { JwtStrategy } from './common/strategy/jwt.strategy';
       global: true,
     }),
     BusinessModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

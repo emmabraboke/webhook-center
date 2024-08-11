@@ -24,6 +24,18 @@ class ConfigService {
   @IsString()
   readonly jwtSecret = process.env.JWT_SECRET;
 
+  @IsString()
+  readonly mailgunApiKey = process.env.MAILGUN_API_KEY;
+
+  @IsString()
+  readonly mailgunDomain = process.env.MAILGUN_DOMAIN;
+
+  @IsString()
+  readonly mailgunFrom = process.env.MAILGUN_FROM;
+
+  @IsString()
+  readonly mailgunTo = process.env.MAILGUN_TO;
+
   constructor() {
     this.validateConfigs();
   }

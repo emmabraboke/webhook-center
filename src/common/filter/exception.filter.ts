@@ -58,7 +58,7 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
       message = 'error occured';
     }
 
-    this.logger.error(exception);
+    this.logger.error(JSON.stringify(exception))
 
     response.status(statusCode).json({
       statusCode,
