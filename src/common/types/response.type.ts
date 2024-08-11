@@ -11,6 +11,20 @@ export interface loginData {
   email: string;
 }
 
+export interface SuccessResponse<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  pagination?: Pagination;
+}
+
+export interface LoginResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  token: string;
+}
+
 export const success = <T>(
   message: string,
   data?: T,
@@ -24,7 +38,7 @@ export const success = <T>(
   };
 };
 
-export const loginResponse = (
+export const loginSuccess = (
   message: string,
   data: loginData,
   token: string,

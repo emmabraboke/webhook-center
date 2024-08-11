@@ -46,3 +46,25 @@ export class LoginDto {
   @MinLength(6)
   password: string;
 }
+
+
+export class ForgotPasswordDto {
+  @ApiProperty()
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(6)
+  password: string;
+
+  @ApiProperty()
+  @IsString()
+  otp: string;
+
+  @ApiProperty()
+  @IsEmail()
+  email: string;
+}
