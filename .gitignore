@@ -2,6 +2,9 @@
 /dist
 /node_modules
 /build
+tsconfig.build.tsbuildinfo
+prisma.config.js
+e2e-test.sh
 
 # Logs
 logs

@@ -5,9 +5,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { fail } from 'src/common/helper/utils';
 import { BaseExceptionFilter, HttpAdapterHost } from '@nestjs/core';
 import { JsonWebTokenError } from 'jsonwebtoken';
-import { DBError } from 'objection';
 
 @Catch()
 export class AllExceptionsFilter extends BaseExceptionFilter {
@@ -25,10 +25,6 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     let statusCode = exception?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
     let message =
       exception?.message || exception?.response?.message || 'error occurred';
-
-    if (exception instanceof DBError) {
-      message = 'error occurred';
-    }
 
     if (exception instanceof JsonWebTokenError) {
       statusCode = HttpStatus.FORBIDDEN;
@@ -58,11 +54,8 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
       message = 'error occured';
     }
 
-    this.logger.error(JSON.stringify(exception))
+    this.logger.error(JSON.stringify(exception));
 
-    response.status(statusCode).json({
-      statusCode,
-      message,
-    });
+    response.status(statusCode).json(fail(message));
   }
 }

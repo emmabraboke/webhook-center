@@ -1,9 +1,30 @@
-FROM node:18 as build
+# Stage 0: Development
+FROM node:22-alpine AS development
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+COPY prisma ./prisma/
+RUN npm ci
 COPY . .
-RUN npm run build
 EXPOSE 3000
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:dev"]
 
+# Stage 1: Build
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm ci
+COPY . .
+RUN npx prisma generate
+RUN npm prune --omit=dev
+
+# Stage 2: Production
+FROM node:22-alpine AS production
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+EXPOSE 3000
+USER node
 CMD ["npm", "run", "start:prod"]

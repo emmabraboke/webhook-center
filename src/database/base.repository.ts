@@ -1,59 +1,87 @@
-import { ModelClass } from 'objection';
-import { BaseModel } from './models/base.model';
+type CreateData<T> = Omit<Partial<T>, 'id' | 'createdAt' | 'updatedAt'>;
 
-export class BaseRepository<T extends BaseModel> {
-  constructor(protected model: ModelClass<T>) {}
+export interface BaseDelegate<T extends { id: string }> {
+  create(args: { data: CreateData<T> }): Promise<T>;
+  createMany(args: { data: Array<CreateData<T>> }): Promise<{ count: number }>;
+  findMany(args?: {
+    where?: Partial<T>;
+    skip?: number;
+    take?: number;
+    orderBy?: Record<string, 'asc' | 'desc'>;
+  }): Promise<T[]>;
+  findFirst(args?: { where?: Partial<T> }): Promise<T | null>;
+  findUnique(args: { where: { id: string } }): Promise<T | null>;
+  update(args: { where: { id: string }; data: Partial<T> }): Promise<T>;
+  delete(args: { where: { id: string } }): Promise<T>;
+  deleteMany(args?: { where?: Partial<T> }): Promise<{ count: number }>;
+  count(args?: { where?: Partial<T> }): Promise<number>;
+}
 
-  create(data: Partial<T>) {
-    return this.model.query().insert(data);
+export class BaseRepository<T extends { id: string; createdAt: Date; updatedAt: Date; deletedAt?: Date | null }> {
+  constructor(protected readonly delegate: BaseDelegate<T>) {}
+
+  create(data: CreateData<T>): Promise<T> {
+    return this.delegate.create({ data });
   }
 
-  createBulk(data: Partial<T>[]) {
-    return this.model.query().insert(data);
+  createMany(data: Array<CreateData<T>>): Promise<{ count: number }> {
+    return this.delegate.createMany({ data });
   }
 
-  find(data: Partial<T>, relations = '') {
-    return this.model.query().where(data).withGraphFetched(relations);
+  find(where: Partial<T>): Promise<T[]> {
+    return this.delegate.findMany({ where });
   }
 
-  findAll() {
-    return this.model.query().orderBy('createdAt', 'DESC');
+  findAll(): Promise<T[]> {
+    return this.delegate.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
-  findPaginated(
+  async findPaginated(
     page: number,
     pageSize: number,
-    filter: Partial<T> = {},
-    relations = '',
-  ) {
-    return this.model
-      .query()
-      .where(filter)
-      .withGraphFetched(relations)
-      .page(page - 1, pageSize);
+    where: Partial<T> = {},
+  ): Promise<{ results: T[]; total: number }> {
+    const [results, total] = await Promise.all([
+      this.delegate.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.delegate.count({ where }),
+    ]);
+    return { results, total };
   }
 
-  findOne(data: Partial<T>, relations = '') {
-    return this.model.query().findOne(data).withGraphFetched(relations);
+  findOne(where: Partial<T>): Promise<T | null> {
+    return this.delegate.findFirst({ where });
   }
 
-  findById(id: string, relations = '') {
-    return this.model.query().findById(id).withGraphFetched(relations);
+  findById(id: string): Promise<T | null> {
+    return this.delegate.findUnique({ where: { id } });
   }
 
-  updateById(id: string, data: Partial<T>) {
-    return this.model.query().patchAndFetchById(id, data);
+  updateById(id: string, data: Partial<T>): Promise<T> {
+    return this.delegate.update({ where: { id }, data });
   }
 
-  updateOne(condition: Partial<T>, data: Partial<T>) {
-    return this.model.query().findOne(condition).update(data);
+  deleteById(id: string): Promise<T> {
+    return this.delegate.delete({ where: { id } });
   }
 
-  deleteById(id: string) {
-    return this.model.query().deleteById(id);
+  deleteMany(where: Partial<T>): Promise<{ count: number }> {
+    return this.delegate.deleteMany({ where });
   }
 
-  delete(condition: Partial<T>) {
-    return this.model.query().where(condition).delete();
+  findActive(where: Partial<T> = {}): Promise<T[]> {
+    return this.delegate.findMany({ where: { ...where, deletedAt: null } });
+  }
+
+  findActiveById(id: string): Promise<T | null> {
+    return this.delegate.findFirst({ where: { id, deletedAt: null } as Partial<T> });
+  }
+
+  softDelete(id: string): Promise<T> {
+    return this.delegate.update({ where: { id }, data: { deletedAt: new Date() } as Partial<T> });
   }
 }

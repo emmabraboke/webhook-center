@@ -1,4 +1,14 @@
 node_modules
-Dockerfile
-.env
 dist
+.env
+.env.*
+.git
+.gitignore
+*.md
+*.log
+coverage
+**/*.spec.ts
+**/*.test.ts
+docker-compose*.yml
+.eslintrc*
+.prettierrc*

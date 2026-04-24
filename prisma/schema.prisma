@@ -1,0 +1,283 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum BusinessStatus {
+  active
+  inactive
+  suspended
+}
+
+enum WebhookEventStatus {
+  pending
+  processing
+  delivered
+  failed
+  discarded
+}
+
+enum EndpointStatus {
+  active
+  disabled
+}
+
+enum EventDeliveryStatus {
+  pending
+  processing
+  delivered
+  failed
+  discarded
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  revoked
+}
+
+enum Permission {
+  manage_members
+  manage_roles
+  manage_projects
+  manage_endpoints
+  manage_subscriptions
+  send_events
+  view_events
+  replay_events
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  firstName     String?    @map("first_name")
+  lastName      String?    @map("last_name")
+  phoneNumber   String?    @map("phone_number")
+  profileImage  String?    @map("profile_image")
+  role          String?
+  password      String?
+  status        UserStatus @default(inactive)
+  emailVerified Boolean    @default(false) @map("email_verified")
+  tokenVersion  Int        @default(0) @map("token_version")
+
+  businesses      Business[]
+  projects        Project[]
+  businessMembers BusinessMember[]
+  sentInvites     MemberInvite[]   @relation("SentInvites")
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("users")
+}
+
+model Business {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  logo        String?
+  status      BusinessStatus @default(active)
+  deletedAt   DateTime?      @db.Timestamptz @map("deleted_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projects Project[]
+  members  BusinessMember[]
+  invites  MemberInvite[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("business")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  deletedAt   DateTime? @db.Timestamptz @map("deleted_at")
+
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  webhookEndpoints WebhookEndpoint[]
+  webhookEvents    WebhookEvent[]
+  webhookSources   WebhookSource[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("projects")
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  permissions Permission[]
+
+  members BusinessMember[]
+  invites MemberInvite[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("roles")
+}
+
+model BusinessMember {
+  id String @id @default(uuid())
+
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  roleId     String   @map("role_id")
+  role       Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@unique([userId, businessId])
+  @@map("business_members")
+}
+
+model MemberInvite {
+  id     String       @id @default(uuid())
+  email  String
+  token  String       @unique
+  status InviteStatus @default(pending)
+
+  senderId   String   @map("sender_id")
+  sender     User     @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  roleId     String   @map("role_id")
+  role       Role     @relation(fields: [roleId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("member_invites")
+}
+
+model WebhookEndpoint {
+  id            String         @id @default(uuid())
+  url           String
+  name          String
+  secret        String
+  status        EndpointStatus @default(active)
+  customHeaders Json?          @map("custom_headers")
+  maxRetries    Int            @default(5) @map("max_retries")
+  deletedAt     DateTime?      @db.Timestamptz @map("deleted_at")
+
+  projectId String  @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  subscriptions   WebhookSubscription[]
+  eventDeliveries EventDelivery[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("webhook_endpoints")
+}
+
+model WebhookSource {
+  id        String @id @default(uuid())
+  name      String
+  ingestKey String @unique @map("ingest_key")
+
+  projectId String  @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  subscriptions WebhookSubscription[]
+  events        WebhookEvent[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("webhook_sources")
+}
+
+model WebhookSubscription {
+  id   String @id @default(uuid())
+  name String
+
+  sourceId   String          @map("source_id")
+  source     WebhookSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  endpointId String          @map("endpoint_id")
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@unique([sourceId, endpointId])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookEvent {
+  id        String             @id @default(uuid())
+  eventType String             @map("event_type")
+  payload   Json
+  headers   Json
+  status    WebhookEventStatus @default(pending)
+
+  projectId String         @map("project_id")
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sourceId  String?        @map("source_id")
+  source    WebhookSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  eventDeliveries EventDelivery[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("webhook_events")
+}
+
+model EventDelivery {
+  id        String              @id @default(uuid())
+  status    EventDeliveryStatus @default(pending)
+  retries   Int                 @default(0)
+  nextRetry DateTime?           @db.Timestamptz @map("next_retry")
+
+  eventId    String          @map("event_id")
+  event      WebhookEvent    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  endpointId String          @map("endpoint_id")
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  deliveryAttempts DeliveryAttempt[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("event_deliveries")
+}
+
+model DeliveryAttempt {
+  id           String  @id @default(uuid())
+  statusCode   Int?    @map("status_code")
+  responseBody String? @map("response_body")
+  error        String?
+  duration     Int?
+
+  eventDeliveryId String        @map("event_delivery_id")
+  eventDelivery   EventDelivery @relation(fields: [eventDeliveryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz @map("updated_at")
+
+  @@map("delivery_attempts")
+}
