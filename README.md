@@ -1,83 +1,135 @@
-# WebhookCenter API
+# WebhookCenter
 
-WebhookCenter API is a robust Webhook management system. It allows you to manage and process incoming webhooks in a structured and efficient manner.
+WebhookCenter is a multi-tenant webhook gateway. Send events to your customers' endpoints with guaranteed delivery — HMAC-signed payloads, automatic retries with exponential backoff, per-attempt logs, and a full management API for endpoints, subscriptions, and team access control.
 
-## 1. Getting Started
+## Stack
 
-### 1.1 Application and Documentation
+- **NestJS** — modular architecture, dependency injection
+- **Prisma ORM** + **PostgreSQL** — database
+- **BullMQ** + **Redis** — reliable delivery queue
+- **@keyv/redis** — distributed cache (OTP storage, rate limiting)
+- **@nestjs/mailer** + Handlebars — transactional email
+- **Zod** — environment variable validation
+- **Swagger / Scalar** — interactive API documentation
 
-You can access the application and its documentation at the following URLs after setup:
+---
 
-- Application: http://localhost:3000/api/v1
-- Documentation: http://localhost:3000/documentation
+## Prerequisites
 
-### 1.2 Prerequisites
+- Node.js 20+
+- PostgreSQL
+- Redis
 
-Before you begin, ensure you have the following software installed on your workstation:
+---
 
-- [Node.js](https://nodejs.org/en/download/package-manager)
-- [PostgreSQL](https://www.postgresql.org/download/)
-- [Docker](https://www.docker.com/products/docker-desktop) (Optional)
+## Getting Started
 
-### 1.3 Project Setup
-
-To set up the project on your local machine, follow these steps:
-
-Clone the repository to your local machine:
+### 1. Clone and install
 
 ```sh
 git clone https://github.com/emmabraboke/webhook-center
-```
-
-Navigate into the project directory:
-
-```sh
 cd webhook-center
-```
-
-Install the project dependencies:
-
-```sh
 npm install
 ```
 
-Create a `.env` file in the root directory of the project. This file should mirror the `.env.sample` file provided in the repository. Fill in the necessary environment variables.
+### 2. Configure environment
 
 ```sh
 cp .env.sample .env
-vi .env
 ```
 
-### 1.4 Running the Application
+Fill in the values in `.env` — all required keys are listed with comments in `.env.sample`.
 
-After setting up the project, you can run the application using Node.js or Docker.
-
-To run the application using Node.js:
+### 3. Database setup
 
 ```sh
+npx prisma migrate dev
+npx prisma generate
+```
+
+### 4. Run
+
+```sh
+# development
+npm run start:dev
+
+# production
 npm run start:prod
 ```
 
-To run the application using Docker:
+---
 
-First, build the Docker image:
+## URLs
+
+| Resource | URL |
+|---|---|
+| API base | `http://localhost:3000/v1` |
+| Swagger UI | `http://localhost:3000/documentation` |
+| Scalar docs | `http://localhost:3000/docs` |
+| Health check | `http://localhost:3000/v1/health` |
+
+---
+
+## API Overview
+
+| Tag | Endpoints |
+|---|---|
+| Auth | Register, login, verify email, forgot/reset password, refresh token, accept invite, logout, me |
+| Business | CRUD businesses |
+| Projects | CRUD projects within a business |
+| Roles | CRUD roles with permissions (Admin only) |
+| Business Members | List, update role, remove members |
+| Member Invites | Send, list, revoke invites |
+| Webhook Endpoints | CRUD endpoints, roll signing secret |
+| Webhook Subscriptions | Subscribe endpoints to event types |
+| Events | Ingest events, list events and deliveries |
+| Event Deliveries | Get delivery, list attempts, replay failed |
+| User | List all users (Admin) |
+| Health | Service health status |
+
+---
+
+## Delivery Pipeline
+
+```
+POST /v1/projects/:projectId/events
+  → WebhookEvent created
+  → Find active endpoints subscribed to the event type
+  → EventDelivery created per endpoint → queued in BullMQ
+  → DeliveryWorker: HMAC-sign payload → POST to endpoint URL → record DeliveryAttempt
+  → On failure: exponential backoff (2^n × 30s), up to endpoint maxRetries
+  → Manual replay: POST /v1/event-deliveries/:id/replay
+```
+
+## Auth Flow
+
+```
+POST /v1/auth/register      → sends OTP email → returns { accessToken, refreshToken, otpId }
+POST /v1/auth/verify-email  → { otpId, otp } → activates account
+POST /v1/auth/login         → blocked if email unverified or account suspended
+POST /v1/auth/logout        → increments tokenVersion, invalidates all existing JWTs
+```
+
+## RBAC
+
+- `Role` holds a `permissions[]` array — managed by platform admins
+- `BusinessMember.roleId` → FK to `Role` (one role per membership)
+- `JwtStrategy` attaches `request.user.permissions` from the `:businessId` route param
+- `PermissionsGuard` reads already-attached permissions — no extra DB query per request
+
+---
+
+## Docker
+
+**Local development** — spins up the app, PostgreSQL, and Redis together:
+
+```sh
+docker compose up
+```
+
+**Production** — runs the app container against your managed Postgres and Redis:
 
 ```sh
 docker build -t webhook-center .
-```
-
-Then, run the Docker container:
-
-```sh
 docker run --env-file .env -p 3000:3000 -d webhook-center
 ```
-
-The application will be accessible at `http://localhost:3000/api/v1` and the documentation at `http://localhost:3000/documentation`.
-
-## 2. Technologies Used
-
-The WebhookCenter API is built with the following technologies:
-
-- Node.js
-- NestJS
-- PostgreSQL
